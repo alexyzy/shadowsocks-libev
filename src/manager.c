@@ -442,7 +442,7 @@ create_and_bind(const char *host, const char *port, int protocol)
         }
     }
 
-    if (!result) {
+    if (result != NULL) {
         freeaddrinfo(result);
     }
 
@@ -613,6 +613,9 @@ manager_recv_cb(EV_P_ ev_io *w, int revents)
         LOGE("too large request: %d", (int)r);
         return;
     }
+
+    // properly terminate string which recvfrom does not do
+    buf[r] = '\0';
 
     char *action = get_action(buf, r);
     if (action == NULL) {
@@ -837,12 +840,14 @@ create_server_socket(const char *host, const char *port)
         close(server_sock);
     }
 
+    if (result != NULL) {
+        freeaddrinfo(result);
+    }
+
     if (rp == NULL) {
         LOGE("cannot bind");
         return -1;
     }
-
-    freeaddrinfo(result);
 
     return server_sock;
 }
@@ -1118,7 +1123,7 @@ main(int argc, char **argv)
     if (workdir == NULL || strlen(workdir) == 0) {
         workdir = pw->pw_dir;
         // If home dir is still not defined or set to nologin/nonexistent, fall back to /tmp
-        if (strstr(workdir, "nologin") || strstr(workdir, "nonexistent") || workdir == NULL || strlen(workdir) == 0) {
+        if (workdir == NULL || strlen(workdir) == 0 || strstr(workdir, "nologin") || strstr(workdir, "nonexistent")) {
             workdir = "/tmp";
         }
 
@@ -1281,6 +1286,7 @@ main(int argc, char **argv)
     ev_signal_stop(EV_DEFAULT, &sigint_watcher);
     ev_signal_stop(EV_DEFAULT, &sigterm_watcher);
     ss_free(working_dir);
+    free_addr(&ip_addr);
 
     return 0;
 }

@@ -387,6 +387,14 @@ usage()
     printf(
         "                                  with Linux kernel > 3.7.0.\n");
 #endif
+    printf(
+        "       [--tcp-incoming-sndbuf]    Size of the incoming connection TCP send buffer.\n");
+    printf(
+        "       [--tcp-incoming-rcvbuf]    Size of the incoming connection TCP receive buffer.\n");
+    printf(
+        "       [--tcp-outgoing-sndbuf]    Size of the outgoing connection TCP send buffer.\n");
+    printf(
+        "       [--tcp-outgoing-rcvbuf]    Size of the outgoing connection TCP receive buffer.\n");
 #if defined(MODULE_REMOTE) || defined(MODULE_LOCAL)
     printf(
         "       [--acl <acl_file>]         Path to ACL (Access Control List).\n");
@@ -406,6 +414,12 @@ usage()
 #ifdef __linux__
     printf(
         "       [--mptcp]                  Enable Multipath TCP on MPTCP Kernel.\n");
+#ifdef USE_NFTABLES
+    printf(
+        "       [--nftables-sets <sets>]   Add malicious IP into nftables sets.\n");
+    printf(
+        "                                  sets spec: [<table1>:]<set1>[,[<table2>:]<set2>...]\n");
+#endif
 #endif
 #ifndef MODULE_MANAGER
     printf(
@@ -470,7 +484,7 @@ daemonize(const char *path)
     }
 
     int dev_null = open("/dev/null", O_WRONLY);
-    if (dev_null) {
+    if (dev_null > 0) {
         /* Redirect to null device  */
         dup2(dev_null, STDOUT_FILENO);
         dup2(dev_null, STDERR_FILENO);
