@@ -69,6 +69,14 @@ sudo snap install shadowsocks-libev --edge
 
 * * *
 
+### Initialise the build environment
+
+This repository uses submodules, so you should pull them before you start, using:
+
+```bash
+git submodule update --init --recursive
+```
+
 ### Pre-build configure guide
 
 For a complete list of available configure-time option,
@@ -176,7 +184,7 @@ yum install gcc gettext autoconf libtool automake make pcre-devel asciidoc xmlto
 sudo pacman -S shadowsocks-libev
 ```
 
-Please refer to downstream [PKGBUILD](https://projects.archlinux.org/svntogit/community.git/tree/trunk?h=packages/shadowsocks-libev)
+Please refer to downstream [PKGBUILD](https://github.com/archlinux/svntogit-community/blob/packages/shadowsocks-libev/trunk/PKGBUILD)
 script for extra modifications and distribution-specific bugs.
 
 ### NixOS
@@ -210,14 +218,14 @@ Notes: Fedora 26  libsodium version >= 1.0.12, so you can install via dnf instal
 
 If your system is too old to provide libmbedtls and libsodium (later than **v1.0.8**), you will need to either install those libraries manually or upgrade your system.
 
-If your system provides with those libraries, you **should not** install them from source. You should jump this section and install them from distribution repository instead.
+If your system provides with those libraries, you **should not** install them from source.You should jump to this section and install them from the distribution repository instead.
 
 For some of the distributions, you might install build dependencies like this:
 
 ```bash
 # Installation of basic build dependencies
 ## Debian / Ubuntu
-sudo apt-get install --no-install-recommends gettext build-essential autoconf libtool libpcre3-dev asciidoc xmlto libev-dev libc-ares-dev automake libmbedtls-dev libsodium-dev
+sudo apt-get install --no-install-recommends gettext build-essential autoconf libtool libpcre3-dev asciidoc xmlto libev-dev libc-ares-dev automake libmbedtls-dev libsodium-dev pkg-config
 ## CentOS / Fedora / RHEL
 sudo yum install gettext gcc autoconf libtool automake make asciidoc xmlto c-ares-devel libev-devel
 ## Arch
@@ -235,8 +243,8 @@ sudo ldconfig
 
 # Installation of MbedTLS
 export MBEDTLS_VER=2.6.0
-wget https://tls.mbed.org/download/mbedtls-$MBEDTLS_VER-gpl.tgz
-tar xvf mbedtls-$MBEDTLS_VER-gpl.tgz
+wget https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/mbedtls-$MBEDTLS_VER.tar.gz
+tar xvf mbedtls-$MBEDTLS_VER.tar.gz
 pushd mbedtls-$MBEDTLS_VER
 make SHARED=1 CFLAGS="-O2 -fPIC"
 sudo make DESTDIR=/usr install

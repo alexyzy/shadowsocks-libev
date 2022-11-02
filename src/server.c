@@ -85,10 +85,6 @@ enum datatypes {
 #define SSMAXCONN 1024
 #endif
 
-#ifndef MAX_FRAG
-#define MAX_FRAG 1
-#endif
-
 #ifdef USE_NFCONNTRACK_TOS
 
 #ifndef MARK_MAX_PACKET
@@ -554,7 +550,7 @@ create_and_bind(const char *host, const char *port, int mptcp)
 {
     struct addrinfo hints;
     struct addrinfo *result, *rp, *ipv4v6bindall;
-    int s, listen_sock;
+    int s, listen_sock = -1;
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family   = AF_UNSPEC;               /* Return IPv4 and IPv6 choices */
@@ -598,7 +594,11 @@ create_and_bind(const char *host, const char *port, int mptcp)
     }
 
     for (/*rp = result*/; rp != NULL; rp = rp->ai_next) {
-        listen_sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        int protocol = rp->ai_protocol;
+        if (mptcp < 0) {
+            protocol = IPPROTO_MPTCP; // Enable upstream MPTCP
+        }
+        listen_sock = socket(rp->ai_family, rp->ai_socktype, protocol);
         if (listen_sock == -1) {
             continue;
         }
@@ -620,6 +620,7 @@ create_and_bind(const char *host, const char *port, int mptcp)
             }
         }
 
+        // Enable out-of-tree mptcp
         if (mptcp == 1) {
             int i = 0;
             while ((mptcp = mptcp_enabled_values[i]) > 0) {
@@ -630,7 +631,7 @@ create_and_bind(const char *host, const char *port, int mptcp)
                 i++;
             }
             if (mptcp == 0) {
-                ERROR("failed to enable multipath TCP");
+                ERROR("failed to enable out-of-tree multipath TCP");
             }
         }
 
@@ -982,11 +983,6 @@ server_recv_cb(EV_P_ ev_io *w, int revents)
         return;
     } else if (err == CRYPTO_NEED_MORE) {
         if (server->stage != STAGE_STREAM) {
-            if (server->frag > MAX_FRAG) {
-                report_addr(server->fd, "malicious fragmentation");
-                stop_server(EV_A_ server);
-                return;
-            }
             server->frag++;
         }
         return;
@@ -1875,8 +1871,9 @@ main(int argc, char **argv)
             plugin_opts = optarg;
             break;
         case GETOPT_VAL_MPTCP:
-            mptcp = 1;
-            LOGI("enable multipath TCP");
+            mptcp = get_mptcp(1);
+            if (mptcp)
+                LOGI("enable multipath TCP (%s)", mptcp > 0 ? "out-of-tree" : "upstream");
             break;
         case GETOPT_VAL_KEY:
             key = optarg;
